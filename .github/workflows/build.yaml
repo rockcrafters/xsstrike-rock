@@ -1,0 +1,74 @@
+name: Build Rock
+
+on:
+  push:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 0 */14 * *" # Trigger every 2 weeks at midnight UTC
+
+jobs:
+  build:
+    uses: canonical/oci-factory/.github/workflows/Build-Rock.yaml@main
+    with:
+      oci-archive-name: "git.rock"
+      rock-repo: rockcrafters/git-rock
+      rock-repo-commit: main
+      rockfile-directory: git
+      arch-map: '{"amd64": ["ubuntu-latest"], "arm64": ["ubuntu-24.04-arm"]}'
+
+  test:
+    uses: canonical/oci-factory/.github/workflows/Test-Rock.yaml@main
+    needs: [build]
+    with:
+      oci-archive-name: "git.rock"
+
+  get-tags:
+    needs: [build]
+    runs-on: ubuntu-latest
+    outputs:
+      tags: ${{ steps.get-tags.outputs.tags }}
+    steps:
+      - name: Download Rock
+        uses: actions/download-artifact@v4
+        with:
+          name: "git.rock"
+
+      - name: Get Tags For Upload
+        id: get-tags
+        run: |
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+            -v $PWD:/workdir -w /workdir \
+            "quay.io/skopeo/stable:v1.15.1" \
+            copy --insecure-policy\
+            oci-archive:git.rock \
+            docker-daemon:git:latest
+
+          ver=$(docker run --rm -i git:latest exec git version | cut -d" " -f3)
+          tags="git:latest"
+          
+          # additional tags
+          tags="$tags $ver"
+          tags="$tags $ver-24.04_stable"
+          tags="$tags $ver-24.04_beta"
+          tags="$tags $ver-24.04_edge"
+          tags="$tags $ver-24.04_candidate"
+          tags="$tags $ver-24.04_stable"
+          
+          # set tags as an output for the next job
+          echo writing tags: $tags
+          echo "tags=$tags" >> "$GITHUB_OUTPUT"
+
+  upload:
+    needs: [test, get-tags]
+    runs-on: ubuntu-latest
+    steps:
+
+      - name: Upload Rock to GHCR
+        uses: canonical/oci-factory/.github/actions/upload-rock@main
+        with:
+          artifact_name: "git.rock"
+          tags: ${{ needs.get-tags.outputs.tags }}
+          name: rockcrafters/git
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}

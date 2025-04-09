@@ -1,0 +1,33 @@
+name: xsstrike
+
+base: bare
+build-base: ubuntu@24.04 
+version: 'latest' 
+summary: An advanced XSS scanner.
+description: |
+  XSStrike is a Cross Site Scripting detection suite equipped with four hand 
+  written parsers, an intelligent payload generator, a powerful fuzzing engine
+  and an incredibly fast crawler.
+platforms: 
+  amd64:
+  arm64:
+
+parts:
+  xsstrike:
+    plugin: python
+    stage-packages:
+      - python3-venv
+    # Fix for usrmerge issue see: https://github.com/canonical/rockcraft/issues/857
+    override-build: | 
+      for l in $CRAFT_PART_INSTALL/usr/lib* 
+      do
+        lib_path=/$(basename $l)
+        ln -sf usr/$lib_path $CRAFT_PART_INSTALL/$lib_path
+      done
+      craftctl default
+      mkdir -p $CRAFT_PART_INSTALL/src
+      cp -r . $_
+    source: https://github.com/s0md3v/XSStrike.git
+    source-type: git
+    source-branch: master
+    source-depth: 1
