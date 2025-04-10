@@ -10,17 +10,17 @@ jobs:
   build:
     uses: canonical/oci-factory/.github/workflows/Build-Rock.yaml@main
     with:
-      oci-archive-name: "git.rock"
-      rock-repo: rockcrafters/git-rock
+      oci-archive-name: "xsstrike.rock"
+      rock-repo: rockcrafters/xsstrike-rock
       rock-repo-commit: main
-      rockfile-directory: git
+      rockfile-directory: xsstrike
       arch-map: '{"amd64": ["ubuntu-latest"], "arm64": ["ubuntu-24.04-arm"]}'
 
   test:
     uses: canonical/oci-factory/.github/workflows/Test-Rock.yaml@main
     needs: [build]
     with:
-      oci-archive-name: "git.rock"
+      oci-archive-name: "xsstrike.rock"
 
   get-tags:
     needs: [build]
@@ -31,7 +31,7 @@ jobs:
       - name: Download Rock
         uses: actions/download-artifact@v4
         with:
-          name: "git.rock"
+          name: "xsstrike.rock"
 
       - name: Get Tags For Upload
         id: get-tags
@@ -40,10 +40,10 @@ jobs:
             -v $PWD:/workdir -w /workdir \
             "quay.io/skopeo/stable:v1.15.1" \
             copy --insecure-policy\
-            oci-archive:git.rock \
-            docker-daemon:git:latest
+            oci-archive:xsstrike.rock \
+            docker-daemon:xsstrike:latest
 
-          ver=$(docker run --rm -i git:latest exec git version | cut -d" " -f3)
+          ver=$(docker run --rm -i xsstrike:latest exec xsstrike -h | tr -d '[:cntrl:]' | sed -n 's/.*XSStrike.*v\([0-9]\+\.[0-9]\+\.[0-9]\+\).*/\1/p')
           tags="git:latest"
           
           # additional tags
@@ -66,9 +66,9 @@ jobs:
       - name: Upload Rock to GHCR
         uses: canonical/oci-factory/.github/actions/upload-rock@main
         with:
-          artifact_name: "git.rock"
+          artifact_name: "xsstrike.rock"
           tags: ${{ needs.get-tags.outputs.tags }}
-          name: rockcrafters/git
+          name: rockcrafters/xsstrike
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
