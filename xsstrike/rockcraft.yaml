@@ -15,6 +15,8 @@ platforms:
 parts:
   xsstrike:
     plugin: python
+    python-requirements: 
+      - requirements.txt
     stage-packages:
       - python3-venv
     # Fix for usrmerge issue see: https://github.com/canonical/rockcraft/issues/857
@@ -31,3 +33,15 @@ parts:
     source-type: git
     source-branch: master
     source-depth: 1
+
+  xsstrike-launcher:
+    plugin: dump
+    source: ./launcher/
+
+  # debug:
+  #   plugin: nil
+  #   stage-packages:
+  #     - busybox
+  #   override-stage: | 
+  #     craftctl default
+  #     $CRAFT_PART_INSTALL/usr/bin/busybox --install $CRAFT_PART_INSTALL/bin
