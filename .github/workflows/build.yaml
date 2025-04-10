@@ -44,7 +44,7 @@ jobs:
             docker-daemon:xsstrike:latest
 
           ver=$(docker run --rm -i xsstrike:latest exec xsstrike -h | tr -d '[:cntrl:]' | sed -n 's/.*XSStrike.*v\([0-9]\+\.[0-9]\+\.[0-9]\+\).*/\1/p')
-          tags="git:latest"
+          tags="latest"
           
           # additional tags
           tags="$tags $ver"
